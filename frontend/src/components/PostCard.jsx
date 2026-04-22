@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { formatDate, extractText } from "../utils/helpers";
+import { formatDate} from "../utils/helpers";
 import { getCategoryColor } from "../api/api";
 
 function PostCard({ post }) {
@@ -43,9 +43,6 @@ function PostCard({ post }) {
         </h2>
 
       
-        <p className="text-gray-600 text-xs mb-2 line-clamp-2 grow">
-          {extractText(post.content)}
-        </p>
 
         
         {author && (
