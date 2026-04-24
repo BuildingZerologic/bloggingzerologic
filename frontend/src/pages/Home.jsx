@@ -1,64 +1,111 @@
 import { useEffect, useState } from "react";
 import { fetchPosts } from "../api/api";
-import CategoryFilter from "../components/CategoryFilter";
 import PostCard from "../components/PostCard";
+import CategoryFilter from "../components/CategoryFilter";
+import { Search } from "lucide-react";
 
 function Home() {
   const [posts, setPosts] = useState([]);
-  const [category, setCategory] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
+
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  // -----------------------------
+  // DEVICE DETECTION
+  // -----------------------------
   useEffect(() => {
-    const loadPosts = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchPosts(category);
-        setPosts(data);
-      } catch (error) {
-        console.error("Error fetching posts:", error);
-      } finally {
-        setLoading(false);
-      }
+    const checkDevice = () => {
+      setIsMobileOrTablet(window.innerWidth < 1024);
     };
-    loadPosts();
-  }, [category]);
+
+    checkDevice();
+    window.addEventListener("resize", checkDevice);
+
+    return () => window.removeEventListener("resize", checkDevice);
+  }, []);
+
+  // -----------------------------
+  // FETCH POSTS
+  // -----------------------------
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      const data = await fetchPosts();
+      setPosts(data);
+      setLoading(false);
+    };
+
+    load();
+  }, []);
+
+  // -----------------------------
+  // FILTER LOGIC
+  // -----------------------------
+  const filteredPosts =
+    isMobileOrTablet && searchQuery.trim()
+      ? posts.filter((post) =>
+          post?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          post?.author?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : posts;
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        
-        <CategoryFilter onSelect={setCategory} selectedCategory={category} />
+    <div className="min-h-screen bg-gray-50">
 
-        
-        {loading && (
-          <div className="text-center py-12">
-            <div className="inline-flex flex-col items-center gap-3">
-              <div className="relative w-10 h-10">
-                <div className="absolute inset-0 animate-spin rounded-full border-2 border-gray-200 border-t-gray-900"></div>
-              </div>
-              <p className="text-gray-600 text-sm font-medium">Loading posts...</p>
+      <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6">
+
+        {/* LEFT SIDE (POSTS) */}
+        <div className="flex-1">
+
+          {/* MOBILE/TABLET SEARCH (HIDDEN ON LG+) */}
+          {isMobileOrTablet && (
+            <div className="relative lg:hidden sticky top-0 z-10 bg-gray-50 py-3">
+              
+              {/* SEARCH ICON */}
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search posts..."
+                className="w-full bg-white border rounded-full py-3 pl-10 pr-4 text-sm shadow-sm focus:outline-none"
+              />
             </div>
-          </div>
-        )}
+          )}
 
-        
-        {!loading && posts.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </div>
-        )}
+          {/* POSTS */}
+          <div className="space-y-4 lg:space-y-6 mt-4 lg:mt-0">
 
-        {!loading && posts.length === 0 && (
-          <div className="text-center py-12">
-            <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <p className="text-gray-600 text-sm font-medium">No posts found.</p>
+            {loading ? (
+              <p className="text-gray-500">Loading...</p>
+            ) : filteredPosts.length > 0 ? (
+              filteredPosts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <p className="text-gray-500 text-sm font-medium">
+                  No posts yet
+                </p>
+              </div>
+            )}
+
           </div>
-        )}
+
+        </div>
+
+        {/* RIGHT SIDE (CATEGORY - DESKTOP ONLY) */}
+        <div className="hidden lg:block w-[320px] sticky top-6 h-[calc(100vh-40px)] overflow-hidden">
+          <CategoryFilter
+            posts={posts}
+            selectedCategory={selectedCategory}
+            onSelect={setSelectedCategory}
+          />
+        </div>
+
       </div>
     </div>
   );

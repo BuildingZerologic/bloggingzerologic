@@ -1,185 +1,234 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchPostBySlug, getCategoryColor } from "../api/api";
+import { fetchPostBySlug, fetchPosts } from "../api/api";
 import { formatDate } from "../utils/helpers";
+import { ArrowLeft, ArrowUp } from "lucide-react";
+import PostCard from "../components/PostCard";
 
-function SinglePost() {
+const API_URL = import.meta.env.VITE_API_URL || "";
+
+export default function SinglePost() {
   const { slug } = useParams();
   const navigate = useNavigate();
+
   const [post, setPost] = useState(null);
+  const [allPosts, setAllPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [seconds, setSeconds] = useState(0);
+
+  const [showTopBtn, setShowTopBtn] = useState(false);
+  const [isBottom, setIsBottom] = useState(false);
+
+  const storageKey = `read_time_${slug}`;
+
+  // -------------------------
+  // FETCH DATA
+  // -------------------------
   useEffect(() => {
-    const loadPost = async () => {
+    const load = async () => {
       setLoading(true);
-      try {
-        const data = await fetchPostBySlug(slug);
-        setPost(data);
-      } catch (error) {
-        console.error("Error fetching post:", error);
-      } finally {
-        setLoading(false);
-      }
+      window.scrollTo(0, 0);
+
+      const postData = await fetchPostBySlug(slug);
+      setPost(postData);
+
+      const postsData = await fetchPosts();
+      setAllPosts(postsData);
+
+      const savedTime = localStorage.getItem(storageKey);
+      setSeconds(savedTime ? parseInt(savedTime) : 0);
+
+      setLoading(false);
     };
-    loadPost();
+
+    load();
   }, [slug]);
 
+  // -------------------------
+  // TIMER
+  // -------------------------
+  useEffect(() => {
+    if (!post) return;
+
+    const interval = setInterval(() => {
+      setSeconds((prev) => {
+        const updated = prev + 1;
+        localStorage.setItem(storageKey, updated);
+        return updated;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [post]);
+
+  // -------------------------
+  // SCROLL DETECTION
+  // -------------------------
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
+
+      const atBottom = scrollTop + windowHeight >= docHeight - 10;
+
+      setIsBottom(atBottom);
+      setShowTopBtn(scrollTop > 300);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const formatTime = (sec) =>
+    `${Math.max(1, Math.floor(sec / 60))} min read`;
+
+  // -------------------------
+  // IMAGE FIX
+  // -------------------------
+  const coverImage = post?.coverImage?.url?.startsWith("http")
+    ? post.coverImage.url
+    : `${API_URL}${post?.coverImage?.url || ""}`;
+
+  const avatar = post?.author?.avatar?.url?.startsWith("http")
+    ? post.author.avatar.url
+    : `${API_URL}${post?.author?.avatar?.url || ""}`;
+
+  // -------------------------
+  // RELATED POSTS
+  // -------------------------
+  const relatedPosts = allPosts.filter(
+    (p) =>
+      p.category?.id === post?.category?.id &&
+      p.slug !== post.slug
+  );
+
+  // -------------------------
+  // LOADING
+  // -------------------------
   if (loading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative w-10 h-10 mx-auto mb-3">
-            <div className="absolute inset-0 animate-spin rounded-full border-2 border-gray-200 border-t-gray-900"></div>
-          </div>
-          <p className="text-gray-600 text-sm font-medium">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-400">Loading...</p>
       </div>
     );
   }
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 text-sm font-medium mb-4">Post not found.</p>
-          <button
-            onClick={() => navigate("/")}
-            className="inline-flex items-center px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-md hover:bg-gray-800 transition-colors"
-          >
-            ← Back
-          </button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <button onClick={() => navigate("/")}>Go Back</button>
       </div>
     );
   }
 
-  const author = post.author;
-  const coverImage = post.coverImage;
-  const categoryColor = post.category ? getCategoryColor(post.category.id) : null;
-
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50">
-      {/* Back Button */}
-      <div className="max-w-3xl mx-auto px-4 pt-4">
+    <div className="bg-white min-h-screen pb-24">
+      <div className="max-w-6xl mx-auto px-6 py-8">
+
+        {/* BACK */}
         <button
-          onClick={() => navigate("/")}
-          className="inline-flex items-center gap-1 px-3 py-2 text-gray-600 hover:text-gray-900 text-sm font-medium rounded-md hover:bg-gray-100 transition-all"
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 mb-10 text-gray-500 hover:text-black"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
+          <ArrowLeft size={18} />
           Back
         </button>
-      </div>
 
-      <article className="max-w-3xl mx-auto px-4 py-6">
-      
-        {coverImage && (
-          <div className="mb-6 rounded-lg overflow-hidden shadow-md border border-gray-100">
-            <img
-              src={
-              coverImage?.url?.startsWith("http")
-                ? coverImage.url
-                : `${import.meta.env.VITE_API_URL}${coverImage.url}`
-            }
-              alt={post.title}
-              className="w-full h-48 md:h-64 object-cover"
-            />
-            
-          </div>
-        )}
-
-       
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+        {/* TITLE */}
+        <h1 className="text-4xl font-bold mb-4">
           {post.title}
         </h1>
 
-       
-        <div className="flex flex-wrap items-center gap-3 mb-6 pb-6 border-b border-gray-200">
-        
-          <div className="flex items-center gap-2">
-            
-            <div>
-              <p className="text-sm font-semibold text-gray-900">{author?.name}</p>
-              <p className="text-xs text-gray-500">
-                {formatDate(post.publishedAt)}
-              </p>
-            </div>
-          </div>
-
-         
-          {post.category && categoryColor && (
-            <div
-              className="px-3 py-1 rounded-full text-white font-semibold text-xs ml-auto"
-              style={{ backgroundColor: categoryColor.bg }}
-            >
-              {post.category.name}
-            </div>
+        {/* AUTHOR */}
+        <div className="flex items-center gap-3 mt-6">
+          {avatar && (
+            <img
+              src={avatar}
+              className="w-10 h-10 rounded-full object-cover"
+              alt="author"
+            />
           )}
+          <span className="text-gray-700 font-medium">
+            {post.author?.name}
+          </span>
         </div>
 
-     
-        <div className="prose max-w-none mb-8">
-          {post.content?.map((block, index) => (
-            <div key={index} className="mb-4">
-              {block.type === 'paragraph' && (
-                <p className="text-gray-700 leading-relaxed text-base">
-                  {block.children?.map((child, childIndex) => (
-                    <span
-                      key={childIndex}
-                      className={`${child.bold ? 'font-bold text-gray-900' : ''} ${child.italic ? 'italic' : ''}`}
-                    >
-                      {child.text}
-                    </span>
-                  ))}
-                </p>
-              )}
-              {block.type === 'heading' && (
-                <h2 className="text-2xl font-bold text-gray-900 mt-6 mb-3">
-                  {block.children?.map((child) => child.text).join('')}
-                </h2>
+        {/* META */}
+        <div className="flex justify-between border-y py-3 text-sm text-gray-500 mb-6">
+          <span>{formatDate(post.publishedAt)}</span>
+          <span className="text-black font-semibold">
+            {formatTime(seconds)}
+          </span>
+        </div>
+
+        {/* CONTENT */}
+        <div className="max-w-3xl">
+          {post.content?.map((block, i) => (
+            <div key={i}>
+              <p className="text-gray-700 text-lg leading-relaxed mb-6">
+                {block.children?.map((c) => c.text).join("")}
+              </p>
+
+              {/* COVER IMAGE AFTER FIRST PARAGRAPH */}
+              {i === 0 && coverImage && (
+                <img
+                  src={coverImage}
+                  className="w-full rounded-xl mb-8"
+                  alt="cover"
+                />
               )}
             </div>
           ))}
         </div>
 
-       
-        {post.tags && post.tags.length > 0 && (
-          <div className="bg-white rounded-lg p-4 border border-gray-100 shadow-sm mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-              </svg>
-              Tags
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {post.tags.map((tag) => (
-                <span
-                  key={tag.id}
-                  className="inline-block bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-medium hover:bg-gray-200 transition-colors cursor-pointer"
-                >
-                  #{tag.name}
-                </span>
+        {/* RELATED POSTS */}
+        {relatedPosts.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-bold mb-6">
+              Related Posts
+            </h2>
+
+            <div className="flex flex-col gap-6">
+              {relatedPosts.map((p) => (
+                <PostCard key={p.id} post={p} />
               ))}
             </div>
           </div>
         )}
+      </div>
 
-        
-        <div className="text-center">
+      {/* =========================
+          BACK TO TOP BUTTONS
+      ========================= */}
+
+      {/* FLOATING BUTTON (SCROLLING) */}
+      {showTopBtn && !isBottom && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 bg-black text-white p-3 rounded-full shadow-lg hover:scale-105 transition"
+        >
+          <ArrowUp size={18} />
+        </button>
+      )}
+
+      {/* CENTER BUTTON (BOTTOM REACHED OR END CONTENT) */}
+      {isBottom && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2">
           <button
-            onClick={() => navigate("/")}
-            className="inline-flex items-center gap-2 px-6 py-2 bg-linear-to-r from-gray-900 to-gray-800 text-white text-sm font-semibold rounded-md hover:from-gray-800 hover:to-gray-700 transition-all shadow-sm hover:shadow-md"
+            onClick={scrollToTop}
+            className="bg-black text-white px-6 py-3 rounded-full shadow-lg hover:scale-105 transition flex items-center gap-2"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Posts
+            <ArrowUp size={18} />
+            Back to Top
           </button>
         </div>
-      </article>
+      )}
     </div>
   );
 }
-
-export default SinglePost;

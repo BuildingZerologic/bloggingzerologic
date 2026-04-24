@@ -73,6 +73,10 @@
       "relation": "manyToOne",
       "target": "api::author.author",
       "inversedBy": "author"
+    },
+    "claps": {
+      "type": "integer",
+      "default": 0
     }
   }
 }

@@ -1,83 +1,101 @@
 import { useNavigate } from "react-router-dom";
 import { formatDate } from "../utils/helpers";
 import { getCategoryColor } from "../api/api";
+import { Hand, MessageCircle, BookmarkPlus } from "lucide-react";
 
-function PostCard({ post }) {
+export default function PostCard({ post }) {
+  
   const navigate = useNavigate();
 
-  const author = post.author;
-  const coverImage = post.coverImage;
-  const category = post.category;
+  const author = post?.author;
+  const coverImage = post?.coverImage;
+  const category = post?.category;
   const categoryColor = category ? getCategoryColor(category.id) : null;
-
+ 
   return (
-    <div className="group relative h-full bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col">
-      {category && categoryColor && (
-        <div className="absolute left-0 top-0 bottom-0 w-1 z-10">
-          <div
-            className="absolute -left-0.5 top-2 px-2 py-1 rounded-r text-white text-xs font-bold"
-            style={{
-              background: `linear-gradient(to right, ${categoryColor.bg} 0%, ${categoryColor.dark} 100%)`,
-            }}
-          >
-            {category.name}
-          </div>
+    <div className="group flex flex-col md:flex-row gap-6 py-8 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors duration-200 px-4 -mx-4 rounded-xl">
+
+      {/* CONTENT */}
+      <div className="flex-1 min-w-0 order-2 md:order-1">
+
+        {/* CATEGORY META */}
+        <div className="flex items-center gap-2 mb-3">
+          {category?.icon && (
+            <img
+              src={category.icon}
+              alt=""
+              className="w-5 h-5 rounded-sm object-contain"
+              referrerPolicy="no-referrer"
+            />
+          )}
+
+          <span className="text-[13px] text-gray-600">
+            Published in{" "}
+            <span className="font-semibold text-gray-900 border-b border-transparent hover:border-gray-900 cursor-pointer">
+              {category?.name || "zerologic"}
+            </span>
+          </span>
         </div>
-      )}
 
+        {/* TITLE */}
+        <h2
+          onClick={() => navigate(`/post/${post.slug}`)}
+          className="text-xl md:text-2xl font-bold text-gray-900 mb-2 leading-tight cursor-pointer group-hover:text-gray-700 transition-colors line-clamp-2"
+        >
+          {post.title}
+        </h2>
 
+        {/* AUTHOR */}
+        <p className="text-[15px] text-gray-500 mb-6 font-medium">
+          By {author?.name || "Anonymous"}
+        </p>
+
+        {/* FOOTER */}
+        <div className="flex items-center justify-between mt-auto pt-2">
+
+          {/* LEFT ACTIONS */}
+          <div className="flex items-center gap-6 text-[13px] text-gray-500">
+
+            <span>{formatDate(post.publishedAt)}</span>
+
+            <button className="flex items-center gap-1.5 hover:text-gray-900 transition-colors">
+              <Hand size={18} strokeWidth={1.5} />
+              <span>{post.claps || 0}</span>
+            </button>
+
+            <button className="flex items-center gap-1.5 hover:text-gray-900 transition-colors">
+              <MessageCircle size={18} strokeWidth={1.5} />
+              <span>{post.comments || 0}</span>
+            </button>
+
+          </div>
+
+          {/* RIGHT ACTION */}
+          <button className="text-gray-400 hover:text-gray-900 transition-colors">
+            <BookmarkPlus size={22} strokeWidth={1.2} />
+          </button>
+
+        </div>
+      </div>
+
+      {/* IMAGE */}
       {coverImage && (
-        <div className="h-32 overflow-hidden bg-gray-200">
+        <div
+          onClick={() => navigate(`/post/${post.slug}`)}
+          className="w-full md:w-[200px] h-[134px] flex-shrink-0 bg-gray-100 rounded-sm overflow-hidden cursor-pointer order-1 md:order-2 self-center"
+        >
           <img
             src={
-              coverImage?.url?.startsWith("http")
+              coverImage.url?.startsWith("http")
                 ? coverImage.url
                 : `${import.meta.env.VITE_API_URL}${coverImage.url}`
             }
             alt={post.title}
-            className="w-full h-full object-cover "/>
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            referrerPolicy="no-referrer"
+          />
         </div>
       )}
-
-      <div className="p-3 flex flex-col grow pl-4">
-
-        <h2 className="text-base font-bold text-gray-900 mb-1 line-clamp-2 group-hover:text-gray-700 transition-colors">
-          {post.title}
-        </h2>
-
-
-
-
-        {author && (
-          <div className="flex items-center mb-2 pt-2 border-t border-gray-200">
-            {author.avatar && (
-              <img
-                src={`${import.meta.env.VITE_API_URL}${author.avatar.url}`}
-                alt={author.name}
-                className="w-6 h-6 rounded-full mr-2 object-cover border border-gray-300 shrink-0"
-              />
-            )}
-            <div className="grow min-w-0">
-              <p className="text-xs font-semibold text-gray-900 truncate">{author.name}</p>
-              <p className="text-xs text-gray-500">
-                {formatDate(post.publishedAt)}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <button
-          onClick={() => navigate(`/post/${post.slug}`)}
-          className="w-full px-3 py-2 bg-linear-to-r from-gray-900 to-gray-800 text-white text-xs font-semibold rounded-md hover:from-gray-800 hover:to-gray-700 transition-all duration-200 shadow-sm hover:shadow-md group/btn shrink-0"
-        >
-          Read More
-          <svg className="inline ml-1 w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
     </div>
   );
 }
-
-export default PostCard;
