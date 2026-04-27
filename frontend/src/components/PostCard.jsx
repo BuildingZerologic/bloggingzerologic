@@ -12,7 +12,7 @@ export default function PostCard({ post }) {
 
   return (
     <div className="group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-300 flex flex-col h-full cursor-pointer">
-      {/* Image Section */}
+
       {coverImage && (
         <div
           onClick={() => navigate(`/post/${post.slug}`)}
@@ -31,9 +31,8 @@ export default function PostCard({ post }) {
         </div>
       )}
 
-      {/* Content Section */}
       <div className="p-4 flex flex-col flex-1">
-        {/* Category and Author Info */}
+        
         <div className="flex items-center gap-2 mb-3">
           {category?.icon && (
             <img
@@ -48,20 +47,18 @@ export default function PostCard({ post }) {
           </span>
         </div>
 
-        {/* Title - with underline on hover */}
+        
         <h2
           onClick={() => navigate(`/post/${post.slug}`)}
-          className="text-lg font-bold text-gray-900 mb-3 leading-snug line-clamp-2 h-14 group-hover:text-gray-700 transition-colors"
+          className="text-lg font-bold text-gray-900  leading-snug line-clamp-2 h-14 group-hover:text-gray-700 transition-colors"
         >
-          <span className="border-b-2 border-transparent group-hover:border-gray-900 transition-all">
+          <span className="border-b-2 border-transparent line-clamp-2 group-hover:border-gray-900 transition-all">
             {post.title}
           </span>
         </h2>
 
-        {/* Spacer to push author/date to bottom */}
         <div className="flex-1" />
 
-        {/* Author and Date */}
         <div className="flex items-center justify-between text-sm text-gray-500">
           <span className="font-medium">By {author?.name || "Anonymous"}</span>
           <span>{formatDate(post.publishedAt)}</span>
