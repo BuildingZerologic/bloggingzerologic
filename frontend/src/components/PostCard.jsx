@@ -51,15 +51,18 @@ export default function PostCard({ post }) {
         {/* Title - with underline on hover */}
         <h2
           onClick={() => navigate(`/post/${post.slug}`)}
-          className="text-lg font-bold text-gray-900 mb-3 leading-snug line-clamp-2 group-hover:text-gray-700 transition-colors"
+          className="text-lg font-bold text-gray-900 mb-3 leading-snug line-clamp-2 h-14 group-hover:text-gray-700 transition-colors"
         >
           <span className="border-b-2 border-transparent group-hover:border-gray-900 transition-all">
             {post.title}
           </span>
         </h2>
 
+        {/* Spacer to push author/date to bottom */}
+        <div className="flex-1" />
+
         {/* Author and Date */}
-        <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
+        <div className="flex items-center justify-between text-sm text-gray-500">
           <span className="font-medium">By {author?.name || "Anonymous"}</span>
           <span>{formatDate(post.publishedAt)}</span>
         </div>
