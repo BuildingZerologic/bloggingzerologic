@@ -62,12 +62,25 @@ export default function RichTextRenderer({ content }) {
         switch (block.type) {
          
           case "heading": {
-            const Tag = `h${block.level || 2}`;
+            const level = Math.min(
+              Math.max(block.level || 2, 1),
+              6
+            );
+            const Tag = `h${level}`;
+
+            const styles = {
+              1: "text-4xl font-bold",
+              2: "text-3xl font-bold",
+              3: "text-2xl font-semibold",
+              4: "text-xl font-semibold",
+              5: "text-lg font-semibold",
+              6: "text-base font-semibold",
+            };
 
             return (
               <Tag
                 key={i}
-                className="mt-8 mb-4 font-bold text-gray-900"
+                className={`mt-8 mb-4 text-gray-900 ${styles[level]}`}
               >
                 {renderChildren(block.children)}
               </Tag>
