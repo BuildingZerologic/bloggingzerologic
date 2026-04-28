@@ -1,10 +1,8 @@
 export default function RichTextRenderer({ content }) {
   if (!content) return null;
 
- 
   const renderChildren = (children = []) =>
     children.map((child, i) => {
-  
       if (child.type === "link") {
         return (
           <a
@@ -19,13 +17,10 @@ export default function RichTextRenderer({ content }) {
         );
       }
 
-      
       if (child.type === "text") {
         let text = child.text;
-
         if (!text) return null;
 
-       
         if (child.bold) text = <strong>{text}</strong>;
         if (child.italic) text = <em>{text}</em>;
         if (child.underline) text = <u>{text}</u>;
@@ -46,23 +41,35 @@ export default function RichTextRenderer({ content }) {
             (c) => !c.text || c.text.trim() === ""
           );
 
-        if (isEmpty && block.type !== "list") return null;
+      
+        if (isEmpty && block.type !== "image") return null;
 
         switch (block.type) {
         
           case "heading": {
-            const Tag = `h${block.level || 2}`;
+            const level = Math.min(Math.max(block.level || 2, 1), 6);
+            const Tag = `h${level}`;
+
+            const sizes = {
+              1: "text-4xl font-bold",
+              2: "text-3xl font-bold",
+              3: "text-2xl font-semibold",
+              4: "text-xl font-semibold",
+              5: "text-lg font-semibold",
+              6: "text-base font-semibold",
+            };
+
             return (
               <Tag
                 key={i}
-                className="mt-8 mb-4 font-bold text-gray-900"
+                className={`mt-8 mb-4 text-gray-900 ${sizes[level]}`}
               >
                 {renderChildren(block.children)}
               </Tag>
             );
           }
 
-          
+         
           case "paragraph":
             return (
               <p
@@ -73,7 +80,7 @@ export default function RichTextRenderer({ content }) {
               </p>
             );
 
-         
+          
           case "list": {
             const isOrdered = block.format === "ordered";
             const ListTag = isOrdered ? "ol" : "ul";
@@ -86,12 +93,9 @@ export default function RichTextRenderer({ content }) {
                 }`}
               >
                 {block.children.map((item, j) => {
-                  if (!item.children) return null;
-
-                  const isEmptyItem =
-                    item.children.every(
-                      (c) => !c.text || c.text.trim() === ""
-                    );
+                  const isEmptyItem = item.children?.every(
+                    (c) => !c.text || c.text.trim() === ""
+                  );
 
                   if (isEmptyItem) return null;
 
@@ -105,6 +109,31 @@ export default function RichTextRenderer({ content }) {
                   );
                 })}
               </ListTag>
+            );
+          }
+
+       
+          case "image": {
+            const src = block.image?.url?.startsWith("http")
+              ? block.image.url
+              : `${import.meta.env.VITE_API_URL}${block.image?.url}`;
+
+            if (!src) return null;
+
+            return (
+              <div key={i} className="my-10">
+                <img
+                  src={src}
+                  alt={block.image?.alternativeText || "image"}
+                  className="w-full rounded-lg"
+                />
+
+                {block.image?.caption && (
+                  <p className="text-sm text-gray-500 mt-2 text-center">
+                    {block.image.caption}
+                  </p>
+                )}
+              </div>
             );
           }
 
